@@ -75,6 +75,29 @@ h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; }
 }
 .reset-btn:hover { border-color: var(--r); color: var(--r); }
 
+.h-right { display: flex; align-items: center; gap: .75rem; }
+
+.rate-toggle {
+  display: inline-flex;
+  background: var(--s2);
+  border: 1px solid var(--brd);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.rate-btn {
+  font-family: inherit; font-size: .8rem; font-weight: 700;
+  padding: .35rem .85rem; background: transparent; border: none;
+  color: var(--tx2); border-radius: 5px; cursor: pointer;
+  transition: all .15s;
+}
+.rate-btn:hover { color: var(--tx); }
+.rate-btn.active { background: var(--b); color: white; }
+.rate-label {
+  font-size: .6rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--muted); margin-right: .25rem;
+}
+
 .main {
   flex: 1; padding: 1.25rem 1.75rem; display: flex; flex-direction: column; gap: 1.25rem;
 }
@@ -209,7 +232,14 @@ footer {
 
 <header>
   <h1>Commission Calculator</h1>
-  <button class="reset-btn" id="resetBtn">Reset All</button>
+  <div class="h-right">
+    <span class="rate-label">Over-min rate</span>
+    <div class="rate-toggle" id="rateToggle">
+      <button class="rate-btn" data-rate="15">15%</button>
+      <button class="rate-btn active" data-rate="18">18%</button>
+    </div>
+    <button class="reset-btn" id="resetBtn">Reset All</button>
+  </div>
 </header>
 
 <div class="main">
@@ -258,16 +288,18 @@ const MONTHLIES = [
 
 // No persistence — calculator resets every time the tab is opened
 let state = {};
+let overRate = 0.18; // 18% default; togglable to 15%
 
 function fF(n) {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+function ratePct() { return Math.round(overRate * 100); }
 
 function trialCommission(price, t) {
   if (!price || price <= 0) return { commission: 0, base: 0, over: 0, overAmt: 0 };
   const base = 0.07 * t.baseForBase;
   const overAmt = Math.max(0, price - t.min);
-  const over = 0.18 * overAmt;
+  const over = overRate * overAmt;
   return { commission: base + over, base, over, overAmt };
 }
 
@@ -292,7 +324,7 @@ function renderTrials() {
       </div>
       <div class="min-info">
         Minimum <span class="min-amt">${fF(t.min)}</span><br>
-        7% of ${fF(t.baseForBase)} + 18% over ${fF(t.min)}
+        7% of ${fF(t.baseForBase)} + ${ratePct()}% over ${fF(t.min)}
       </div>
       <div class="input-row">
         <span class="input-label">Sale Price</span>
@@ -492,6 +524,17 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   state = {};
   renderTrials();
   renderMonthlies();
+  attachHandlers();
+  updateAll();
+});
+
+document.getElementById('rateToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.rate-btn');
+  if (!btn) return;
+  overRate = parseFloat(btn.dataset.rate) / 100;
+  document.querySelectorAll('#rateToggle .rate-btn').forEach(b => b.classList.toggle('active', b === btn));
+  // Re-render trial cards so their min-info text updates, then preserve entered values
+  renderTrials();
   attachHandlers();
   updateAll();
 });
