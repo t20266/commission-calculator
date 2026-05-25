@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commission Calculator</title>
+<style>
+:root {
+  --bg: #0a0a0b;
+  --s1: #111113;
+  --s2: #18181b;
+  --s3: #1f1f23;
+  --brd: #27272a;
+  --brd2: #3f3f46;
+  --tx: #fafafa;
+  --tx2: #a1a1aa;
+  --dim: #71717a;
+  --muted: #52525b;
+  --g: #22c55e;
+  --b: #3b82f6;
+  --r: #ef4444;
+  --o: #f59e0b;
+  --p: #a855f7;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: auto; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type=number] { -moz-appearance: textfield; }
+
+header {
+  padding: 1rem 1.75rem;
+  border-bottom: 1px solid var(--brd);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.h-left { display: flex; align-items: center; gap: 1.5rem; }
+h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; }
+
+.h-stats { display: flex; align-items: center; gap: 1.75rem; }
+.h-stat { display: flex; flex-direction: column; align-items: flex-start; }
+.h-stat-label {
+  font-size: .5rem; text-transform: uppercase; letter-spacing: 2px;
+  font-weight: 600; color: var(--muted); line-height: 1; margin-bottom: 2px;
+}
+.h-stat-val {
+  font-size: 1.15rem; font-weight: 700; color: var(--g);
+  font-family: "SF Mono","JetBrains Mono",Menlo,monospace;
+  line-height: 1;
+}
+.h-stat-sub {
+  font-size: .52rem; color: var(--dim);
+  font-family: "SF Mono","JetBrains Mono",Menlo,monospace;
+  margin-top: 1px;
+}
+
+.reset-btn {
+  font-family: inherit; font-size: .6rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1.5px; padding: .35rem .7rem; background: transparent;
+  border: 1px solid var(--brd); color: var(--tx2); border-radius: 6px; cursor: pointer;
+  transition: all .15s;
+}
+.reset-btn:hover { border-color: var(--r); color: var(--r); }
+
+.main {
+  flex: 1; padding: 1.25rem 1.75rem; display: flex; flex-direction: column; gap: 1.25rem;
+}
+
+.section-title {
+  font-size: .8rem; text-transform: uppercase; letter-spacing: 2px;
+  font-weight: 700; color: var(--tx2); margin-bottom: .85rem;
+  display: flex; align-items: center; gap: .55rem;
+}
+.section-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .85rem;
+}
+
+.card {
+  background: var(--s1);
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  transition: border-color .15s;
+}
+.card:focus-within { border-color: var(--brd2); }
+
+.card-head { display: flex; align-items: center; justify-content: space-between; }
+.card-title {
+  font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em;
+}
+.card-tag {
+  font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+  padding: .25rem .55rem; border-radius: 5px;
+}
+.tag-trial { background: rgba(59,130,246,.12); color: var(--b); }
+.tag-monthly { background: rgba(168,85,247,.12); color: var(--p); }
+
+.min-info {
+  font-size: .8rem;
+  color: var(--tx);
+  line-height: 1.45;
+}
+.min-info .min-amt { color: var(--tx); font-weight: 700; }
+
+.input-row { display: flex; flex-direction: column; gap: .35rem; }
+.input-label {
+  font-size: .65rem; text-transform: uppercase; letter-spacing: 1.5px;
+  font-weight: 600; color: var(--muted);
+}
+.price-input-wrap { position: relative; }
+.price-input-wrap::before {
+  content: '$'; position: absolute; left: .7rem; top: 50%; transform: translateY(-50%);
+  color: var(--dim);
+  font-size: 1rem; pointer-events: none;
+}
+.price-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  border-radius: 6px;
+  color: var(--tx);
+  padding: .55rem .7rem .55rem 1.5rem;
+  font-size: 1.1rem;
+  font-family: inherit;
+  font-weight: 600;
+  outline: none;
+  transition: border-color .15s;
+}
+.price-input:focus { border-color: var(--brd2); }
+.price-input.below { border-color: rgba(239,68,68,.4); color: var(--r); }
+
+.dual-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+
+.result {
+  background: var(--s2);
+  border: 1px solid var(--brd);
+  border-radius: 8px;
+  padding: .65rem .85rem;
+  margin-top: auto;
+}
+.result-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.result-label {
+  font-size: .65rem; text-transform: uppercase; letter-spacing: 1.5px;
+  font-weight: 600; color: var(--muted);
+}
+.result-amt {
+  font-size: 1.55rem; font-weight: 800;
+  color: var(--g);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.result-amt.zero { color: var(--muted); font-weight: 600; }
+.result-break {
+  font-size: .75rem; color: var(--dim);
+  line-height: 1.45;
+}
+
+.warning {
+  font-size: .72rem; color: var(--r);
+  margin-top: 3px;
+}
+
+footer {
+  padding: .85rem 1.75rem;
+  border-top: 1px solid var(--brd);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  background: var(--s1);
+}
+.total-label { font-size: .7rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; color: var(--muted); }
+.total-amt {
+  font-size: 1.7rem; font-weight: 800;
+  color: var(--g);
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Commission Calculator</h1>
+  <button class="reset-btn" id="resetBtn">Reset All</button>
+</header>
+
+<div class="main">
+
+  <div>
+    <div class="section-title">
+      <span class="section-dot" style="background:var(--b)"></span>
+      Trials
+    </div>
+    <div class="grid" id="trialsGrid"></div>
+  </div>
+
+  <div>
+    <div class="section-title">
+      <span class="section-dot" style="background:var(--p)"></span>
+      Monthly Retainers
+    </div>
+    <div class="grid" id="monthlyGrid"></div>
+  </div>
+
+</div>
+
+<footer>
+  <span class="total-label">Total Commission Earned</span>
+  <span class="total-amt" id="footerTotal">$0.00</span>
+</footer>
+
+<script>
+// Trial packages: one-off sale
+// Commission = 7% of min + 18% of (price - min)
+const TRIALS = [
+  { id: 'trial50',  title: '50 Groups',  min: 2700, baseForBase: 2700 },
+  { id: 'trial100', title: '100 Groups', min: 3750, baseForBase: 3750 },
+  // 200 trial: user wrote "7% of 3750" — assuming typo, using 4500 to match pattern.
+  // If it should literally be 3750, change baseForBase to 3750.
+  { id: 'trial200', title: '200 Groups', min: 4500, baseForBase: 4500 },
+];
+
+// Monthly retainers: month 1 (setup + first month upfront) + month 2 (recurring)
+// Commission = 10% of month 1 + 10% of month 2
+const MONTHLIES = [
+  { id: 'mo50',  title: '50 Groups',  setup: 1500, monthly: 1000, m1Min: 2500 },
+  { id: 'mo100', title: '100 Groups', setup: 2000, monthly: 1500, m1Min: 3500 },
+  { id: 'mo200', title: '200 Groups', setup: 2000, monthly: 2000, m1Min: 4000 },
+];
+
+// No persistence — calculator resets every time the tab is opened
+let state = {};
+
+function fF(n) {
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function trialCommission(price, t) {
+  if (!price || price <= 0) return { commission: 0, base: 0, over: 0, overAmt: 0 };
+  const base = 0.07 * t.baseForBase;
+  const overAmt = Math.max(0, price - t.min);
+  const over = 0.18 * overAmt;
+  return { commission: base + over, base, over, overAmt };
+}
+
+function monthlyCommission(m1, m2) {
+  const c1 = (m1 && m1 > 0) ? m1 * 0.10 : 0;
+  const c2 = (m2 && m2 > 0) ? m2 * 0.10 : 0;
+  return { commission: c1 + c2, c1, c2 };
+}
+
+function renderTrials() {
+  const grid = document.getElementById('trialsGrid');
+  grid.innerHTML = '';
+  TRIALS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const stored = state[t.id];
+    const price = (stored && typeof stored === 'number') ? stored : '';
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="card-title">${t.title}</span>
+        <span class="card-tag tag-trial">Trial</span>
+      </div>
+      <div class="min-info">
+        Minimum <span class="min-amt">${fF(t.min)}</span><br>
+        7% of ${fF(t.baseForBase)} + 18% over ${fF(t.min)}
+      </div>
+      <div class="input-row">
+        <span class="input-label">Sale Price</span>
+        <div class="price-input-wrap">
+          <input type="number" class="price-input" data-id="${t.id}" data-type="trial"
+            placeholder="${t.min}" value="${price}" min="0" step="50">
+        </div>
+        <div class="warning" id="${t.id}-warn" style="display:none">Below minimum (${fF(t.min)})</div>
+      </div>
+      <div class="result">
+        <div class="result-top">
+          <span class="result-label">Commission</span>
+          <span class="result-amt zero" id="${t.id}-amt">$0.00</span>
+        </div>
+        <div class="result-break" id="${t.id}-break">Enter a sale price</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function renderMonthlies() {
+  const grid = document.getElementById('monthlyGrid');
+  grid.innerHTML = '';
+  MONTHLIES.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const stored = state[m.id] || {};
+    const m1 = stored.m1 ?? '';
+    const m2 = stored.m2 ?? '';
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="card-title">${m.title}</span>
+        <span class="card-tag tag-monthly">Monthly</span>
+      </div>
+      <div class="min-info">
+        ${fF(m.setup)} setup + ${fF(m.monthly)}/mo<br>
+        Month 1 upfront: <span class="min-amt">${fF(m.m1Min)}</span> · 10% × 2 months
+      </div>
+      <div class="input-row">
+        <span class="input-label">Month 1 / Month 2 Price</span>
+        <div class="dual-inputs">
+          <div class="price-input-wrap">
+            <input type="number" class="price-input" data-id="${m.id}" data-month="m1"
+              placeholder="${m.m1Min}" value="${m1}" min="0" step="50">
+          </div>
+          <div class="price-input-wrap">
+            <input type="number" class="price-input" data-id="${m.id}" data-month="m2"
+              placeholder="${m.monthly}" value="${m2}" min="0" step="50">
+          </div>
+        </div>
+        <div class="warning" id="${m.id}-warn" style="display:none">Below minimum</div>
+      </div>
+      <div class="result">
+        <div class="result-top">
+          <span class="result-label">Commission</span>
+          <span class="result-amt zero" id="${m.id}-amt">$0.00</span>
+        </div>
+        <div class="result-break" id="${m.id}-break">Enter month 1 + month 2 prices</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function updateTrial(t) {
+  const input = document.querySelector(`input[data-id="${t.id}"]`);
+  const priceNum = parseFloat(input.value);
+  const amtEl = document.getElementById(`${t.id}-amt`);
+  const breakEl = document.getElementById(`${t.id}-break`);
+  const warnEl = document.getElementById(`${t.id}-warn`);
+
+  if (isNaN(priceNum) || priceNum <= 0) {
+    amtEl.textContent = '$0.00';
+    amtEl.classList.add('zero');
+    breakEl.textContent = 'Enter a sale price';
+    warnEl.style.display = 'none';
+    input.classList.remove('below');
+    return 0;
+  }
+
+  const r = trialCommission(priceNum, t);
+  amtEl.textContent = fF(r.commission);
+  amtEl.classList.remove('zero');
+
+  if (priceNum < t.min) {
+    warnEl.style.display = '';
+    input.classList.add('below');
+    breakEl.textContent = `7% × ${fF(priceNum)} (below min)`;
+    // If below min, recalc as flat 7% of actual price (since pattern unclear)
+    // — but we'll keep formula honest: base = 7% × baseForBase still.
+    breakEl.textContent = `7% × ${fF(t.baseForBase)} = ${fF(r.base)}`;
+  } else {
+    warnEl.style.display = 'none';
+    input.classList.remove('below');
+    breakEl.textContent = `${fF(r.base)} base + ${fF(r.over)} on ${fF(r.overAmt)} over`;
+  }
+  return r.commission;
+}
+
+function updateMonthly(m) {
+  const m1Input = document.querySelector(`input[data-id="${m.id}"][data-month="m1"]`);
+  const m2Input = document.querySelector(`input[data-id="${m.id}"][data-month="m2"]`);
+  const m1 = parseFloat(m1Input.value);
+  const m2 = parseFloat(m2Input.value);
+  const amtEl = document.getElementById(`${m.id}-amt`);
+  const breakEl = document.getElementById(`${m.id}-break`);
+  const warnEl = document.getElementById(`${m.id}-warn`);
+
+  const m1Valid = !isNaN(m1) && m1 > 0;
+  const m2Valid = !isNaN(m2) && m2 > 0;
+
+  if (!m1Valid && !m2Valid) {
+    amtEl.textContent = '$0.00';
+    amtEl.classList.add('zero');
+    breakEl.textContent = 'Enter month 1 + month 2 prices';
+    warnEl.style.display = 'none';
+    m1Input.classList.remove('below');
+    m2Input.classList.remove('below');
+    return 0;
+  }
+
+  const r = monthlyCommission(m1Valid ? m1 : 0, m2Valid ? m2 : 0);
+  amtEl.textContent = fF(r.commission);
+  amtEl.classList.remove('zero');
+
+  const belowM1 = m1Valid && m1 < m.m1Min;
+  const belowM2 = m2Valid && m2 < m.monthly;
+  m1Input.classList.toggle('below', belowM1);
+  m2Input.classList.toggle('below', belowM2);
+  warnEl.style.display = (belowM1 || belowM2) ? '' : 'none';
+
+  const parts = [];
+  if (m1Valid) parts.push(`M1: ${fF(r.c1)} (10% × ${fF(m1)})`);
+  if (m2Valid) parts.push(`M2: ${fF(r.c2)} (10% × ${fF(m2)})`);
+  breakEl.textContent = parts.join(' · ');
+
+  return r.commission;
+}
+
+function updateAll() {
+  let totalComm = 0;
+  let totalSale = 0;
+  let activeDeals = 0;
+
+  TRIALS.forEach(t => {
+    const input = document.querySelector(`input[data-id="${t.id}"]`);
+    const priceNum = parseFloat(input.value);
+    if (!isNaN(priceNum) && priceNum > 0) {
+      totalSale += priceNum;
+      activeDeals++;
+    }
+    const c = updateTrial(t);
+    totalComm += c;
+  });
+
+  MONTHLIES.forEach(m => {
+    const m1 = parseFloat(document.querySelector(`input[data-id="${m.id}"][data-month="m1"]`).value);
+    const m2 = parseFloat(document.querySelector(`input[data-id="${m.id}"][data-month="m2"]`).value);
+    if (!isNaN(m1) && m1 > 0) { totalSale += m1; }
+    if (!isNaN(m2) && m2 > 0) { totalSale += m2; }
+    if ((!isNaN(m1) && m1 > 0) || (!isNaN(m2) && m2 > 0)) activeDeals++;
+    const c = updateMonthly(m);
+    totalComm += c;
+  });
+
+  document.getElementById('footerTotal').textContent = fF(totalComm);
+}
+
+function attachHandlers() {
+  document.querySelectorAll('input.price-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const id = input.dataset.id;
+      const month = input.dataset.month; // for monthlies
+      const val = parseFloat(input.value);
+      if (isNaN(val) || val <= 0) {
+        if (month) {
+          if (!state[id]) state[id] = {};
+          state[id][month] = null;
+          if (state[id].m1 == null && state[id].m2 == null) delete state[id];
+        } else {
+          delete state[id];
+        }
+      } else {
+        if (month) {
+          if (!state[id]) state[id] = {};
+          state[id][month] = val;
+        } else {
+          state[id] = val;
+        }
+      }
+      updateAll();
+    });
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Clear all entered prices?')) return;
+  state = {};
+  renderTrials();
+  renderMonthlies();
+  attachHandlers();
+  updateAll();
+});
+
+renderTrials();
+renderMonthlies();
+attachHandlers();
+updateAll();
+</script>
+</body>
+</html>
