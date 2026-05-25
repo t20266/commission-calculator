@@ -201,6 +201,41 @@ h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; }
   line-height: 1.45;
 }
 
+.copy-btn {
+  background: transparent;
+  border: 1px solid var(--brd);
+  color: var(--tx2);
+  border-radius: 5px;
+  padding: .25rem .55rem;
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  margin-left: .5rem;
+}
+.copy-btn:hover { background: var(--s3); border-color: var(--brd2); color: var(--tx); }
+.copy-btn.copied {
+  background: var(--g); border-color: var(--g); color: white;
+}
+.copy-btn.disabled {
+  opacity: 0.35; cursor: not-allowed;
+}
+.copy-btn.disabled:hover {
+  background: transparent; border-color: var(--brd); color: var(--tx2);
+}
+
+.result-top-right { display: flex; align-items: center; }
+
+.footer-right { display: flex; align-items: center; gap: .75rem; }
+.copy-btn-lg {
+  font-size: .75rem;
+  padding: .5rem .9rem;
+  margin-left: 0;
+}
+
 .warning {
   font-size: .72rem; color: var(--r);
   margin-top: 3px;
@@ -264,7 +299,10 @@ footer {
 
 <footer>
   <span class="total-label">Total Commission Earned</span>
-  <span class="total-amt" id="footerTotal">$0.00</span>
+  <div class="footer-right">
+    <span class="total-amt" id="footerTotal">$0.00</span>
+    <button class="copy-btn copy-btn-lg disabled" data-target="footerTotal" title="Copy total">Copy Total</button>
+  </div>
 </footer>
 
 <script>
@@ -337,7 +375,10 @@ function renderTrials() {
       <div class="result">
         <div class="result-top">
           <span class="result-label">Commission</span>
-          <span class="result-amt zero" id="${t.id}-amt">$0.00</span>
+          <div class="result-top-right">
+            <span class="result-amt zero" id="${t.id}-amt">$0.00</span>
+            <button class="copy-btn disabled" data-target="${t.id}-amt" title="Copy amount">Copy</button>
+          </div>
         </div>
         <div class="result-break" id="${t.id}-break">Enter a sale price</div>
       </div>`;
@@ -380,7 +421,10 @@ function renderMonthlies() {
       <div class="result">
         <div class="result-top">
           <span class="result-label">Commission</span>
-          <span class="result-amt zero" id="${m.id}-amt">$0.00</span>
+          <div class="result-top-right">
+            <span class="result-amt zero" id="${m.id}-amt">$0.00</span>
+            <button class="copy-btn disabled" data-target="${m.id}-amt" title="Copy amount">Copy</button>
+          </div>
         </div>
         <div class="result-break" id="${m.id}-break">Enter month 1 + month 2 prices</div>
       </div>`;
@@ -490,6 +534,7 @@ function updateAll() {
   });
 
   document.getElementById('footerTotal').textContent = fF(totalComm);
+  refreshCopyButtons();
 }
 
 function attachHandlers() {
@@ -527,6 +572,41 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   attachHandlers();
   updateAll();
 });
+
+// Copy handler — delegated so it works on re-rendered buttons too
+document.body.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.copy-btn');
+  if (!btn || btn.classList.contains('disabled')) return;
+  const target = document.getElementById(btn.dataset.target);
+  if (!target) return;
+  const text = target.textContent.trim();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  const orig = btn.textContent;
+  btn.classList.add('copied');
+  btn.textContent = 'Copied!';
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.textContent = orig;
+  }, 1100);
+});
+
+// Enable/disable copy buttons based on whether the linked amount is non-zero
+function refreshCopyButtons() {
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    const target = document.getElementById(btn.dataset.target);
+    if (!target) return;
+    const txt = target.textContent.trim();
+    const isZero = txt === '$0.00' || txt === '';
+    btn.classList.toggle('disabled', isZero);
+  });
+}
 
 document.getElementById('rateToggle').addEventListener('click', (e) => {
   const btn = e.target.closest('.rate-btn');
