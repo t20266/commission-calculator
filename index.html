@@ -257,55 +257,6 @@ footer {
   color: var(--g);
   letter-spacing: -0.01em;
 }
-.total-amt.negative { color: var(--r); }
-
-.refunds-section {
-  padding: .85rem 1.75rem;
-  border-top: 1px solid var(--brd);
-  background: var(--s1);
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  flex-wrap: wrap;
-}
-.rf-label {
-  font-size: .7rem; text-transform: uppercase; letter-spacing: 2px;
-  font-weight: 700; color: var(--muted);
-}
-.rf-total {
-  font-size: 1.05rem; font-weight: 700; color: var(--r);
-  line-height: 1;
-}
-.rf-total.zero { color: var(--muted); }
-.rf-list { display: flex; flex-wrap: wrap; gap: .35rem; flex: 1; }
-.rf-chip {
-  display: inline-flex; align-items: center; gap: .35rem;
-  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25);
-  border-radius: 6px; padding: .25rem .45rem .25rem .6rem;
-  font-size: .85rem;
-}
-.rf-chip-amt { font-weight: 700; color: var(--r); }
-.rf-chip-del {
-  background: none; border: none; color: var(--muted);
-  font-size: .85rem; cursor: pointer; padding: 0 2px; line-height: 1;
-  font-family: inherit;
-}
-.rf-chip-del:hover { color: var(--r); }
-
-.rf-add { display: flex; gap: .3rem; align-items: center; margin-left: auto; }
-.rf-add input {
-  background: var(--bg); border: 1px solid var(--brd); border-radius: 6px;
-  color: var(--tx); padding: .4rem .6rem; font-size: .85rem;
-  font-family: inherit; font-weight: 600; outline: none; height: 32px;
-  width: 100px;
-}
-.rf-add input:focus { border-color: var(--brd2); }
-.rf-add button {
-  background: var(--r); color: white; border: none; border-radius: 6px;
-  width: 32px; height: 32px; font-size: 1.1rem; font-weight: 700; cursor: pointer;
-  font-family: inherit; line-height: 1;
-}
-.rf-add button:hover { opacity: .85; }
 
 @media (max-width: 1100px) {
   .grid { grid-template-columns: 1fr 1fr; }
@@ -357,17 +308,6 @@ footer {
 
 </div>
 
-<div class="refunds-section">
-  <span class="rf-label">Refunds</span>
-  <span class="rf-total zero" id="rfTotal">$0.00</span>
-  <div class="rf-list" id="rfList"></div>
-  <div class="rf-add">
-    <input type="number" id="rfAmt" placeholder="$ amount" step="50"
-      onkeydown="if(event.key==='Enter')addRefund()">
-    <button onclick="addRefund()" title="Add refund">−</button>
-  </div>
-</div>
-
 <footer>
   <span class="total-label">Total Commission Earned</span>
   <div class="footer-right">
@@ -406,7 +346,6 @@ const MONTHLIES = [
 // No persistence — calculator resets every time the tab is opened
 let state = {};
 let overRate = 0.18; // 18% default; togglable to 15%
-let refunds = []; // array of { amount, id }
 
 function fF(n) {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -617,43 +556,8 @@ function updateAll() {
     totalComm += c;
   });
 
-  const refundTotal = refunds.reduce((s, r) => s + r.amount, 0);
-  const netTotal = totalComm - refundTotal;
-
-  const footerEl = document.getElementById('footerTotal');
-  footerEl.textContent = fF(netTotal);
-  footerEl.classList.toggle('negative', netTotal < 0);
-
-  renderRefunds(refundTotal);
+  document.getElementById('footerTotal').textContent = fF(totalComm);
   refreshCopyButtons();
-}
-
-function renderRefunds(total) {
-  const totalEl = document.getElementById('rfTotal');
-  totalEl.textContent = total > 0 ? `−${fF(total)}` : '$0.00';
-  totalEl.classList.toggle('zero', total === 0);
-
-  const list = document.getElementById('rfList');
-  list.innerHTML = refunds.map(r => `
-    <div class="rf-chip">
-      <span class="rf-chip-amt">−${fF(r.amount)}</span>
-      <button class="rf-chip-del" onclick="removeRefund('${r.id}')" title="Remove">✕</button>
-    </div>`).join('');
-}
-
-function addRefund() {
-  const input = document.getElementById('rfAmt');
-  const val = Math.abs(parseFloat(input.value));
-  if (!val || val <= 0) return;
-  refunds.push({ amount: val, id: Date.now().toString() });
-  input.value = '';
-  input.focus();
-  updateAll();
-}
-
-function removeRefund(id) {
-  refunds = refunds.filter(r => r.id !== id);
-  updateAll();
 }
 
 function attachHandlers() {
@@ -686,7 +590,6 @@ function attachHandlers() {
 document.getElementById('resetBtn').addEventListener('click', () => {
   if (!confirm('Clear all entered prices?')) return;
   state = {};
-  refunds = [];
   renderTrials();
   renderAnnuals();
   renderMonthlies();
